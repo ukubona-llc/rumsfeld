@@ -2553,9 +2553,7 @@ In the TMVES stack, the Eigenmode *is* the Unknown Known. It is the limbic salie
 
 For Ukubona, when you build a digital twin to interface with a user, the platform is essentially holding up a mirror to the user's Unknown Knowns. This is the exact root of alert fatigue. If a system continuously prompts a user against the grain of their tacit behavioral Eigenmodes, you generate massive ontological perturbation. The system isn't just annoying them; it is actively colliding with the deeply ingrained rules they didn't realize they were following. To preserve the user experience, the UI must absorb that friction, relying heavily on the damping logic:
 
-```markdown
 $$ \text{Damping Factor} = f(\text{Ontological Perturbation}, \text{Medical Threshold}) $$
-```
 
 Colbert assumed the Unknown Known was simply a political cover-up. But in the architecture of the mind, algorithmic compression, and digital twins, the Unknown Known is the most powerful force in the stack: it is the territory successfully pretending to be the map. 
 
