@@ -3,6 +3,7 @@
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/REWeBzGuzCc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
+```
 #rumsfield-triad #rumsfield-quadrant https://ukubona-llc.github.io/tmves/ 
 #https://ukubona-llc.github.io/call/ 
 #https://ukubona-llc.github.io/tmves-music/ 
@@ -10,7 +11,7 @@
 #https://www.youtube.com/watch?v=REWeBzGuzCc (this is it! So I guess its a triad, not the tetrad logic demands!)
 #https://www.theuncertaintyproject.org/tools/rumsfeld-matrix (this imputes the known unknown, as unknown known!!!)
 #https://www.youtube.com/watch?v=PX2KJkIR7s0 (quagmire)
-
+```
 
 > *In terms of at least a little context. Rumsfeld’s words were a response to a question about the lack of evidence linking Saddam Hussein’s regime in Iraq to the supply of “weapons of mass destruction” to various terrorist groups.*       
 > --[Medium](https://medium.com/paul-austin-murphys-essays-on-philosophy/rumsfelds-logic-of-known-knowns-known-unknowns-and-unknown-unknowns-f506db31ac74 )
