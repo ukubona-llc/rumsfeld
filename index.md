@@ -1635,3 +1635,866 @@ Let me read the frontend design skill first.
 
 Now let me build this. The concept: a lossy compression engine — the UI itself degrades, glitches, and reconstructs as you move through the TMVES layers. The aesthetic is dark, editorial, with signal decay as the core metaphor.This will be an HTML artifact — the lossy compression is the aesthetic. Text degrades as you descend through layers. Signal decays. The eigenmode is the thing that survives.
 
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ukubona — TMVES Lossy Compression Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0a0a08;
+    --parchment: #f5f0e8;
+    --gold: #b8860b;
+    --gold-pale: #e8d48a;
+    --rust: #8b3a1a;
+    --slate: #2a2a35;
+    --mist: #c8c4bc;
+    --void: #06060a;
+    --signal: #4a9a6a;
+    --noise: #2d4a3a;
+    --r: #c0392b;
+    --o: #d4691c;
+    --y: #c8a520;
+    --g: #2e8b57;
+    --b: #2255a4;
+    --i: #5b3fa0;
+    --v: #7b2d8b;
+  }
+
+  html { font-size: 16px; background: var(--void); }
+
+  body {
+    background: var(--void);
+    color: var(--parchment);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* SPECTRUM STRIP */
+  .spectrum {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+      var(--r) 0%, var(--r) 14.28%,
+      var(--o) 14.28% 28.57%,
+      var(--y) 28.57% 42.85%,
+      var(--g) 42.85% 57.14%,
+      var(--b) 57.14% 71.42%,
+      var(--i) 71.42% 85.71%,
+      var(--v) 85.71% 100%
+    );
+    z-index: 999;
+  }
+
+  /* HEADER */
+  .masthead {
+    padding: 4rem 4rem 2rem;
+    border-bottom: 1px solid rgba(200,196,188,0.15);
+    position: relative;
+  }
+
+  .masthead::after {
+    content: 'OKUBALA SI KULABA';
+    position: absolute;
+    right: 4rem;
+    top: 4rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--mist);
+    opacity: 0.4;
+    writing-mode: vertical-rl;
+  }
+
+  .site-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
+  }
+
+  .main-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 300;
+    line-height: 1.0;
+    color: var(--parchment);
+    letter-spacing: -0.02em;
+  }
+
+  .main-title em {
+    font-style: italic;
+    color: var(--gold-pale);
+  }
+
+  .subtitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--mist);
+    opacity: 0.5;
+    margin-top: 1rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* INTRO CONTROLS */
+  .controls-bar {
+    padding: 1.5rem 4rem;
+    border-bottom: 1px solid rgba(200,196,188,0.1);
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .lens-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--mist);
+    opacity: 0.5;
+    text-transform: uppercase;
+  }
+
+  .lens-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .lens-btn {
+    background: transparent;
+    border: 1px solid rgba(200,196,188,0.2);
+    color: var(--mist);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+
+  .lens-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold-pale);
+    background: rgba(184,134,11,0.05);
+  }
+
+  .lens-btn.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--void);
+  }
+
+  /* TENSOR INPUT */
+  .tensor-zone {
+    padding: 2rem 4rem;
+    border-bottom: 1px solid rgba(200,196,188,0.1);
+  }
+
+  .zone-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--mist);
+    opacity: 0.4;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .tensor-input {
+    width: 100%;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(200,196,188,0.12);
+    border-left: 3px solid var(--rust);
+    color: var(--parchment);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 300;
+    line-height: 1.7;
+    padding: 1rem 1.25rem;
+    resize: none;
+    outline: none;
+    transition: border-color 0.3s;
+    min-height: 100px;
+  }
+
+  .tensor-input::placeholder {
+    color: var(--mist);
+    opacity: 0.2;
+    font-style: italic;
+  }
+
+  .tensor-input:focus {
+    border-color: rgba(200,196,188,0.25);
+    border-left-color: var(--gold);
+    background: rgba(255,255,255,0.03);
+  }
+
+  /* COMPRESSION ENGINE */
+  .engine {
+    padding: 0 4rem 4rem;
+  }
+
+  .compress-btn {
+    display: block;
+    width: 100%;
+    margin: 2rem 0;
+    background: transparent;
+    border: 1px solid rgba(200,196,188,0.2);
+    border-top: 2px solid var(--gold);
+    color: var(--gold-pale);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .compress-btn::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 0;
+    background: rgba(184,134,11,0.08);
+    transition: width 0.6s ease;
+  }
+
+  .compress-btn:hover::before { width: 100%; }
+  .compress-btn:hover { border-color: var(--gold); letter-spacing: 0.5em; }
+
+  /* LAYER CARDS */
+  .layer-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .layer {
+    border-left: 1px solid rgba(200,196,188,0.08);
+    border-bottom: 1px solid rgba(200,196,188,0.06);
+    padding: 2rem 2.5rem;
+    position: relative;
+    transition: all 0.5s;
+    opacity: 0.3;
+    transform: translateX(-8px);
+    cursor: pointer;
+  }
+
+  .layer.revealed {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .layer:hover {
+    background: rgba(255,255,255,0.015);
+  }
+
+  /* Lossy degradation by layer depth */
+  .layer[data-depth="0"] { border-left-color: rgba(200,196,188,0.25); }
+  .layer[data-depth="1"] { filter: blur(0px); }
+  .layer[data-depth="2"] { filter: blur(0.2px); }
+  .layer[data-depth="3"] { filter: blur(0.5px); }
+  .layer[data-depth="4"] { filter: blur(0.8px); }
+  .layer[data-depth="5"] { filter: blur(1.5px); }
+
+  .layer.active[data-depth="3"] { filter: blur(0px); }
+  .layer.active[data-depth="4"] { filter: blur(0px); }
+  .layer.active[data-depth="5"] { filter: blur(0px); }
+
+  .layer-header {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .layer-index {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    color: var(--mist);
+    opacity: 0.35;
+    min-width: 40px;
+    text-transform: uppercase;
+  }
+
+  .layer-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    color: var(--parchment);
+  }
+
+  .layer-math {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--mist);
+    opacity: 0.3;
+    margin-left: auto;
+  }
+
+  .layer-body {
+    padding-left: 56px;
+  }
+
+  .layer-description {
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.8;
+    color: rgba(200,196,188,0.7);
+    margin-bottom: 0.75rem;
+  }
+
+  .layer-output {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--signal);
+    opacity: 0;
+    min-height: 1.2rem;
+    transition: opacity 0.8s;
+    border-left: 2px solid var(--noise);
+    padding-left: 0.75rem;
+    margin-top: 0.5rem;
+    word-break: break-word;
+  }
+
+  .layer-output.visible { opacity: 1; }
+
+  /* EIGENMODE SPECIAL */
+  .layer.eigenmode-layer {
+    background: rgba(46,139,87,0.04);
+    border-left-color: var(--signal) !important;
+  }
+
+  .layer.eigenmode-layer .layer-name {
+    color: var(--gold-pale);
+  }
+
+  .eigenmode-detected {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--gold-pale);
+    opacity: 0;
+    line-height: 1.6;
+    transition: opacity 1s;
+    margin-top: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(184,134,11,0.2);
+    background: rgba(184,134,11,0.04);
+  }
+
+  .eigenmode-detected.visible { opacity: 1; }
+
+  /* SCALAR FEEDBACK */
+  .scalar-feedback {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .scalar-btn {
+    background: transparent;
+    border: 1px solid rgba(200,196,188,0.15);
+    color: var(--mist);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+
+  .scalar-btn:hover { border-color: var(--gold); color: var(--gold-pale); }
+  .scalar-btn.chosen { background: rgba(184,134,11,0.15); border-color: var(--gold); color: var(--gold-pale); }
+
+  /* LIVE TRACE */
+  .trace-panel {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(200,196,188,0.08);
+    border-left: 3px solid var(--slate);
+    min-height: 80px;
+  }
+
+  .trace-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.4em;
+    color: var(--mist);
+    opacity: 0.3;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .trace-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--signal);
+    line-height: 1.9;
+    opacity: 0;
+    animation: fadein 0.4s forwards;
+  }
+
+  @keyframes fadein { to { opacity: 0.8; } }
+
+  .trace-empty {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--mist);
+    opacity: 0.2;
+    font-style: italic;
+  }
+
+  /* FOOTER */
+  .footer {
+    padding: 2rem 4rem;
+    border-top: 1px solid rgba(200,196,188,0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .footer-aphorism {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--mist);
+    opacity: 0.35;
+  }
+
+  .footer-mark {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    color: var(--mist);
+    opacity: 0.2;
+    text-transform: uppercase;
+  }
+
+  /* NOISE OVERLAY on deep layers when compressing */
+  .noise-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    z-index: 500;
+  }
+
+  .noise-overlay.active { opacity: 1; }
+
+  /* GLITCH keyframes */
+  @keyframes glitch {
+    0%   { transform: translate(0); }
+    20%  { transform: translate(-2px, 1px); clip-path: inset(30% 0 50% 0); }
+    40%  { transform: translate(2px, -1px); clip-path: inset(60% 0 10% 0); }
+    60%  { transform: translate(-1px, 2px); clip-path: inset(10% 0 80% 0); }
+    80%  { transform: translate(1px, -2px); clip-path: inset(70% 0 5% 0); }
+    100% { transform: translate(0); clip-path: none; }
+  }
+
+  .glitching { animation: glitch 0.15s steps(2) 3; }
+
+  /* SCANLINE */
+  .scanline {
+    position: fixed;
+    top: -100%;
+    left: 0; right: 0;
+    height: 2px;
+    background: rgba(74,154,106,0.08);
+    pointer-events: none;
+    z-index: 400;
+    animation: scan 8s linear infinite;
+  }
+
+  @keyframes scan {
+    0%   { top: -2px; }
+    100% { top: 100vh; }
+  }
+
+  /* ROYGBIV accent per layer */
+  .layer[data-depth="0"] .layer-name { color: #e8a0a0; }
+  .layer[data-depth="1"] .layer-name { color: #e8c890; }
+  .layer[data-depth="2"] .layer-name { color: #d4c870; }
+  .layer[data-depth="3"] .layer-name { color: var(--gold-pale); }
+  .layer[data-depth="4"] .layer-name { color: #90b4e8; }
+  .layer[data-depth="5"] .layer-name { color: #c8a0e8; }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .masthead, .controls-bar, .tensor-zone, .engine, .footer { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .masthead::after { display: none; }
+    .layer-math { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="spectrum"></div>
+<div class="scanline"></div>
+<div class="noise-overlay" id="noiseOverlay"></div>
+
+<header class="masthead">
+  <p class="site-name">Ukubona LLC</p>
+  <h1 class="main-title">TMVES<br><em>Lossy</em><br>Compression</h1>
+  <p class="subtitle">θ_t → Σw_i·L_i → f(σ²) → g(λ) → h(ε)+L(θ_{t+1})</p>
+</header>
+
+<div class="controls-bar">
+  <span class="lens-label">Compression lens</span>
+  <div class="lens-buttons">
+    <button class="lens-btn active" data-lens="gospel" onclick="setLens(this)">Gospel</button>
+    <button class="lens-btn" data-lens="jazz" onclick="setLens(this)">Jazz</button>
+    <button class="lens-btn" data-lens="algorithmic" onclick="setLens(this)">Algorithmic</button>
+    <button class="lens-btn" data-lens="financial" onclick="setLens(this)">Financial</button>
+    <button class="lens-btn" data-lens="war" onclick="setLens(this)">Epistemic</button>
+  </div>
+</div>
+
+<div class="tensor-zone">
+  <div class="zone-label">Tensor injection — raw signal</div>
+  <textarea class="tensor-input" id="tensorInput" rows="4"
+    placeholder="Paste lyrics, a chord progression, an argument, or raw text. This is your θ_t — the overcomplete manifold before compression begins."></textarea>
+</div>
+
+<div class="engine">
+  <button class="compress-btn" onclick="runCompression()">
+    ↓ &nbsp; run compression &nbsp; ↓
+  </button>
+
+  <div class="layer-stack" id="layerStack">
+
+    <div class="layer" data-depth="0" data-id="tensor" onclick="activateLayer(this)">
+      <div class="layer-header">
+        <span class="layer-index">3+</span>
+        <span class="layer-name">Tensor</span>
+        <span class="layer-math">θ_t</span>
+      </div>
+      <div class="layer-body">
+        <p class="layer-description" id="desc-tensor">The raw, overcomplete manifold. Everything that could be known — all frequencies, all histories, all possible structures. Maximum entropy. Maximum redundancy. No compression yet.</p>
+        <div class="layer-output" id="out-tensor"></div>
+      </div>
+    </div>
+
+    <div class="layer" data-depth="1" data-id="matrix" onclick="activateLayer(this)">
+      <div class="layer-header">
+        <span class="layer-index">2</span>
+        <span class="layer-name">Matrix</span>
+        <span class="layer-math">Σw_i·L_i</span>
+      </div>
+      <div class="layer-body">
+        <p class="layer-description" id="desc-matrix">The compressor. The loss function begins here. What gets weighted. What gets discarded. Every matrix has a bias — an Unknown Known baked into its architecture. The off-diagonal is where meaning lives.</p>
+        <div class="layer-output" id="out-matrix"></div>
+      </div>
+    </div>
+
+    <div class="layer" data-depth="2" data-id="vector" onclick="activateLayer(this)">
+      <div class="layer-header">
+        <span class="layer-index">1</span>
+        <span class="layer-name">Vector</span>
+        <span class="layer-math">f(σ²)</span>
+      </div>
+      <div class="layer-body">
+        <p class="layer-description" id="desc-vector">Directed execution. The shortest path taken under the compressed representation. Action, momentum, performance. What moves through time. This is where strategy becomes visible — and where flawed matrices produce quagmires.</p>
+        <div class="layer-output" id="out-vector"></div>
+      </div>
+    </div>
+
+    <div class="layer eigenmode-layer" data-depth="3" data-id="eigenmode" onclick="activateLayer(this)">
+      <div class="layer-header">
+        <span class="layer-index">E</span>
+        <span class="layer-name">Eigenmode</span>
+        <span class="layer-math">g(λ)</span>
+      </div>
+      <div class="layer-body">
+        <p class="layer-description" id="desc-eigenmode">The invariant. What survives compression. Strip the production, change the key, translate the language, play it through a dying phone speaker — if the eigenmode holds, the song still hits. This is what you call "the thing." The magic. The soul.</p>
+        <div class="eigenmode-detected" id="eigenmode-detected"></div>
+        <div class="layer-output" id="out-eigenmode"></div>
+      </div>
+    </div>
+
+    <div class="layer" data-depth="4" data-id="scalar" onclick="activateLayer(this)">
+      <div class="layer-header">
+        <span class="layer-index">0</span>
+        <span class="layer-name">Scalar</span>
+        <span class="layer-math">h(ε)+L(θ_{t+1})</span>
+      </div>
+      <div class="layer-body">
+        <p class="layer-description" id="desc-scalar">Embodied resolution. The chills, the tear, the foot tap, the stream logged, the market cap, the resignation demanded. A single number encoding everything that survived. Not the magic itself — the body's response to having encountered it.</p>
+        <div class="layer-output" id="out-scalar"></div>
+        <div class="scalar-feedback" id="scalarFeedback" style="display:none">
+          <button class="scalar-btn" onclick="scalarResponse(this, 'felt')">❧ felt something</button>
+          <button class="scalar-btn" onclick="scalarResponse(this, 'neutral')">— neutral</button>
+          <button class="scalar-btn" onclick="scalarResponse(this, 'nothing')">∅ nothing</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer" data-depth="5" data-id="loss" onclick="activateLayer(this)">
+      <div class="layer-header">
+        <span class="layer-index">↩</span>
+        <span class="layer-name">Loss</span>
+        <span class="layer-math">L(θ_{t+1})</span>
+      </div>
+      <div class="layer-body">
+        <p class="layer-description" id="desc-loss">What the compression destroyed. Every codec has victims. The frequencies that didn't make it. The Unknown Knowns that were filtered before anyone noticed they were missing. The quagmire nobody modeled. Lossy is honest. Lossless is a lie.</p>
+        <div class="layer-output" id="out-loss"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="trace-panel">
+    <div class="trace-label">Live trace</div>
+    <div id="traceContent">
+      <span class="trace-empty">no signal yet — inject tensor above</span>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <span class="footer-aphorism">Okubala si Kulaba — to count is not to see</span>
+  <span class="footer-mark">Ukubona LLC · ukb-0-tmves-dt-v00</span>
+</footer>
+
+<script>
+const lenses = {
+  gospel: {
+    tensor: "The raw emotional weight of the congregation, centuries of diaspora, infinite vocal possibility, the Spirit as overcomplete manifold.",
+    matrix: "Diatonic constraints, rehearsed scales, the one tritone allowed — western harmony imposing structure on infinite sonic space.",
+    vector: "The kinetic momentum of the band director, the dynamic pacing from intro to bridge to peak — time as directed flow.",
+    eigenmode: "The tritone substitution that makes the hair stand up. The modal interchange. The specific pocket of the rhythm section that forces the body to move. Unreplicable, unkillable.",
+    scalar: "The congregational response — tears, the involuntary foot tap, the moment three hundred people inhale simultaneously.",
+    loss: "What the 4/4 grid cannot hold. The microtonal inflections between notes. The silence before the downbeat. What got quantized away."
+  },
+  jazz: {
+    tensor: "The full acoustic space — all possible intervals, the historical vocabulary of the form, the room's resonance, the musicians' biographies converging.",
+    matrix: "The lead sheet. The agreed chord changes. ii-V-I as compressed grammar. The genre's constraints as shared compression protocol.",
+    vector: "Real-time kinetic performance. The soloist's dialogue with the rhythm section — subverting the changes at velocity, in public.",
+    eigenmode: "The unrepeatable phrase. The specific syncopation that exists only in this performance at this tempo on this night in this room. Coltrane's 'sheets of sound' as eigenmode.",
+    scalar: "Aesthetic satisfaction. The intellectual payoff of a complex harmonic problem resolved. The applause.",
+    loss: "The takes that didn't make the record. The improvisation that happened but wasn't recorded. The chord nobody named."
+  },
+  algorithmic: {
+    tensor: "The global attention manifold — three billion humans, their scroll patterns, the entire recorded sonic history as training data.",
+    matrix: "The 15-second hook requirement. Skip-rate optimization. TikTok's compression function selecting what gets amplified.",
+    vector: "Playlist velocity. Discover Weekly injection. The directed propagation of the track through recommendation graphs.",
+    eigenmode: "The viral soundbite. The one second that becomes the meme. Stripped of everything — still recognizable. Often thin. Often disposable.",
+    scalar: "Stream count. Billboard position. The fraction of a cent per play multiplied by millions. Attention converted to capital.",
+    loss: "Depth. Ambiguity. Songs that require a second or third listen. Music that doesn't reveal itself at 0.25x speed. Everything that resists the skip."
+  },
+  financial: {
+    tensor: "Internet-scale data, global market signals, enterprise complexity, all possible capital allocations — the overcomplete economic manifold.",
+    matrix: "Capex strategy. Investment thesis. The compression of TAM into resource allocation decisions. $200B+ bets on which eigenmodes will persist.",
+    vector: "Revenue growth rate. Cloud backlog realization. Execution velocity — where strategy becomes quarterly numbers.",
+    eigenmode: "The durable moat. The gross margin that survives competition. The brand that persists across market cycles. CUDA. Search. Ecosystem lock-in.",
+    scalar: "Market capitalization. Free cash flow. ROIC. The single number the market uses to compress everything it believes about the future.",
+    loss: "The startups that didn't get funded. The alternative architectures that died. The externalities not priced into the scalar."
+  },
+  war: {
+    tensor: "Total epistemic field — global intelligence, historical grievances, geopolitical posturing, cultural context, every possible scenario.",
+    matrix: "Rumsfeld's Triad. A 3×3 compressor trying to map 4-dimensional reality. The Unknown Known filtered before anyone named it.",
+    vector: "The 2003 invasion. Highest-velocity action under maximally compressed intelligence. Corticothalamic certainty.",
+    eigenmode: "The Quagmire. Not failure — a stable attractor under a flawed matrix. Every new vector (the surge, the tactical shift) collapses back to the same structure. The invariant nobody modeled.",
+    scalar: "Senator Kennedy, 2005. The human cost as final L(θ_{t+1}). History's ledger entry.",
+    loss: "The Known Known that was Unknown Known all along: nation-building fails. The tacit knowledge that was inadmissible in the matrix."
+  }
+};
+
+let currentLens = 'gospel';
+let scalarLog = [];
+let traceLines = [];
+let isCompressing = false;
+
+function setLens(btn) {
+  document.querySelectorAll('.lens-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentLens = btn.dataset.lens;
+  resetLayers();
+}
+
+function resetLayers() {
+  document.querySelectorAll('.layer').forEach(l => {
+    l.classList.remove('revealed', 'active');
+    const out = l.querySelector('.layer-output');
+    if (out) { out.textContent = ''; out.classList.remove('visible'); }
+  });
+  const ed = document.getElementById('eigenmode-detected');
+  if (ed) { ed.textContent = ''; ed.classList.remove('visible'); }
+  const sf = document.getElementById('scalarFeedback');
+  if (sf) sf.style.display = 'none';
+  document.querySelectorAll('.scalar-btn').forEach(b => b.classList.remove('chosen'));
+  clearTrace();
+}
+
+function clearTrace() {
+  document.getElementById('traceContent').innerHTML = '<span class="trace-empty">no signal yet — inject tensor above</span>';
+  traceLines = [];
+}
+
+function addTrace(msg) {
+  const tc = document.getElementById('traceContent');
+  if (traceLines.length === 0) tc.innerHTML = '';
+  traceLines.push(msg);
+  const el = document.createElement('div');
+  el.className = 'trace-line';
+  el.textContent = msg;
+  tc.appendChild(el);
+}
+
+function activateLayer(el) {
+  document.querySelectorAll('.layer').forEach(l => l.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function detectEigenmode(text, lens) {
+  const lensData = lenses[lens];
+  if (!text || text.trim().length < 10) {
+    return lensData.eigenmode;
+  }
+
+  const t = text.toLowerCase();
+
+  const repetition = (t.match(/\b(\w{4,})\b(?=.*\b\1\b)/g) || []).length;
+  const hasEmotion = /(love|pain|hurt|joy|cry|feel|heart|god|spirit|dark|light|free|home|alone|truth|grace|loss|hope|fear)/.test(t);
+  const hasTension = /(but|however|though|yet|still|never|always|if only|despite|although)/.test(t);
+  const hasRepetition = repetition > 2;
+  const hasContrast = /(rise|fall|heaven|hell|day|night|black|white|yes|no)/.test(t);
+
+  if (hasRepetition && hasEmotion && hasTension) {
+    return "Hook-driven tension loop — emotional invariant under maximal compression. The contradiction does not resolve; it deepens. This survives.";
+  }
+  if (hasRepetition && hasEmotion) {
+    return "Mantra-form eigenmode — meaning through recurrence. The phrase earns weight by surviving repetition unchanged. High replay density.";
+  }
+  if (hasTension && hasContrast) {
+    return "Dialectical structure — tension seeking resolution that never fully arrives. The gap between poles is the eigenmode. Bittersweet invariant.";
+  }
+  if (hasEmotion) {
+    return "Emotional salience preserved. The vulnerability is the signal. Strip production, change key, translate language — it still lands.";
+  }
+  if (hasRepetition) {
+    return "Rhythmic/incantatory structure. The repetition itself is load-bearing. Meaning accumulates through iteration, not novelty.";
+  }
+  return lensData.eigenmode;
+}
+
+async function typeText(el, text, delay=18) {
+  el.textContent = '';
+  el.classList.add('visible');
+  for (let i = 0; i < text.length; i++) {
+    el.textContent += text[i];
+    await new Promise(r => setTimeout(r, delay + Math.random() * 10));
+  }
+}
+
+async function revealLayer(layerId, outputText, delay=0) {
+  await new Promise(r => setTimeout(r, delay));
+  const layer = document.querySelector(`.layer[data-id="${layerId}"]`);
+  if (!layer) return;
+  layer.classList.add('revealed');
+  addTrace(`→ ${layerId.toUpperCase()} layer opened`);
+
+  if (layerId === 'matrix' || layerId === 'vector' || layerId === 'loss') {
+    layer.classList.add('glitching');
+    setTimeout(() => layer.classList.remove('glitching'), 500);
+  }
+
+  const out = document.getElementById(`out-${layerId}`);
+  if (out && outputText) {
+    await new Promise(r => setTimeout(r, 300));
+    await typeText(out, outputText, layerId === 'loss' ? 25 : 16);
+  }
+
+  if (layerId === 'eigenmode') {
+    const ed = document.getElementById('eigenmode-detected');
+    const input = document.getElementById('tensorInput').value;
+    const detected = detectEigenmode(input, currentLens);
+    await new Promise(r => setTimeout(r, 400));
+    ed.textContent = '"' + detected + '"';
+    ed.classList.add('visible');
+    addTrace(`⟐ eigenmode detected`);
+  }
+
+  if (layerId === 'scalar') {
+    await new Promise(r => setTimeout(r, 600));
+    document.getElementById('scalarFeedback').style.display = 'flex';
+    addTrace(`◎ awaiting scalar response`);
+  }
+}
+
+async function runCompression() {
+  if (isCompressing) return;
+  isCompressing = true;
+
+  const overlay = document.getElementById('noiseOverlay');
+  overlay.classList.add('active');
+  setTimeout(() => overlay.classList.remove('active'), 800);
+
+  resetLayers();
+  const lens = lenses[currentLens];
+  const input = document.getElementById('tensorInput').value.trim();
+
+  addTrace(`▸ compression initiated — lens: ${currentLens}`);
+  if (input) addTrace(`◈ tensor: ${input.slice(0, 60)}${input.length > 60 ? '…' : ''}`);
+
+  const tensorOut = input
+    ? `signal received (${input.split(/\s+/).length} tokens) — dimensionality: ∞ — entropy: maximum`
+    : `no injection — defaulting to lens archetype — dimensionality: ∞`;
+
+  await revealLayer('tensor', tensorOut, 100);
+  await revealLayer('matrix', `compressing via ${currentLens} lens — ${lens.matrix.slice(0,80)}…`, 600);
+  await revealLayer('vector', lens.vector.slice(0,100) + '…', 1400);
+  await revealLayer('eigenmode', '', 2400);
+  await revealLayer('scalar', lens.scalar.slice(0,90) + '…', 3600);
+  await revealLayer('loss', lens.loss, 4600);
+
+  addTrace(`✓ compression complete — eigenmode preserved`);
+  isCompressing = false;
+}
+
+function scalarResponse(btn, val) {
+  document.querySelectorAll('.scalar-btn').forEach(b => b.classList.remove('chosen'));
+  btn.classList.add('chosen');
+  scalarLog.push({ lens: currentLens, response: val, ts: Date.now() });
+  addTrace(`◎ scalar: ${val} — logged`);
+  if (val === 'felt') {
+    document.getElementById('noiseOverlay').classList.add('active');
+    setTimeout(() => document.getElementById('noiseOverlay').classList.remove('active'), 300);
+  }
+}
+
+// Reveal first layer passively on load
+setTimeout(() => {
+  document.querySelector('.layer[data-id="tensor"]').classList.add('revealed');
+}, 400);
+</script>
+</body>
+</html>
+```
