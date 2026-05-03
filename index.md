@@ -1631,3 +1631,7 @@ Anyways, an artefact, preferably vite/react -- but i'm open to .html -- is what 
 
 ---
 
+Let me read the frontend design skill first.
+
+Now let me build this. The concept: a lossy compression engine — the UI itself degrades, glitches, and reconstructs as you move through the TMVES layers. The aesthetic is dark, editorial, with signal decay as the core metaphor.This will be an HTML artifact — the lossy compression is the aesthetic. Text degrades as you descend through layers. Signal decays. The eigenmode is the thing that survives.
+
